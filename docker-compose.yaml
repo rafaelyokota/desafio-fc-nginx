@@ -1,0 +1,45 @@
+version: '3'
+
+services: 
+    db:
+        container_name: db
+        image: mysql:5.7
+        command: --innodb_use_native_aio=0 
+        restart: always
+        # volumes: 
+        #     - data_sql:/var/lib/mysql
+        environment: 
+            - MYSQL_ROOT_PASSWORD=root
+            - MYSQL_DATABASE=nodedb
+
+        networks: 
+        - rede-fc
+    
+    app:
+        build: ./node_app
+        container_name: app
+        networks: 
+            - rede-fc
+        entrypoint: dockerize -wait tcp://db:3306  node app.js
+        depends_on: 
+            - db
+        environment: 
+            - PORT=3000
+            - MYSQL_HOST=db
+            - MYSQL_USER=root
+            - MYSQL_PASS=root
+            - MYSQL_DB=nodedb
+    proxy:
+        container_name: proxy
+        build: ./nginx
+        ports: 
+        - 8080:80
+        networks: 
+        - rede-fc
+
+# volumes:
+#     data_sql:
+
+networks: 
+    rede-fc:
+        driver: bridge
